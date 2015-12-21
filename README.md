@@ -35,7 +35,7 @@ Since we are using edge collapsing algorithm, we have to store all the edges som
 - It uses a `std::vector<bool>` to record whether a specific vertex has been removed.
 
 The way `Mesh` storing neighboring faces to a vertex is a little complicated and here is a simple illustration.
-<img href="img/illustrate.png"/>
+<img src="img/illustrate.png"/>
 
 Suppose the order of the three triangle is (v0, v2, v1), (v0, v1, v3), (v0, v3, v2). Then the neighboring faces of v0 is stored as
 ```
@@ -56,7 +56,7 @@ To simplify a mesh, the program does the following procedures:
 
 ###Preserve the orientation.
 The main problem in the previous simple algorithm is that it doesn't preserve the orientation of a triangle. This is illustrated as
-<img href="img/orientation.png"/>
+<img src="img/orientation.png"/>
 
 After collapsing edge (v1, v2) to new_v1, the orientation of the red triangle is changed, which is a disaster to this mesh. Thus I added a function to check that whether a face would be reversed after collapsing this edge and handle it by reverse it first.
 
