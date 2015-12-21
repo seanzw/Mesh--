@@ -4,19 +4,11 @@
 #include <fstream>
 #include <chrono>
 
-#include "HalfEdgeMesh--.h"
 #include "STLMesh--.h"
-
-enum MeshType {
-    STLMESH,
-    HALFEDGEMESH
-};
-
-const MeshType type = STLMESH;
 
 int main(int argc, char *argv[]) {
     if (argc < 4) {
-        std::cerr << "Usage: inputMesh reduceRatio outputMesh" << std::endl;
+        std::cerr << "Usage: inputMesh outputMesh reduceRatio" << std::endl;
         return -1;
     }
 
@@ -32,14 +24,8 @@ int main(int argc, char *argv[]) {
     std::cout << "Start parsing mesh..." << std::endl;
 
     mmm::Mesh *mesh = nullptr;
-    if (type == STLMESH) {
-        std::cout << "Using STL mesh..." << std::endl;
-        mesh = new mmm::STLMesh(in, 0.1);
-    }
-    else if (type == HALFEDGEMESH) {
-        std::cout << "Using half edge mesh..." << std::endl;
-        mesh = new mmm::HalfEdgeMesh(in);
-    }
+    std::cout << "Using STL mesh..." << std::endl;
+    mesh = new mmm::STLMesh(in, 0.1);
 
     in.close();
     std::cout << "Finished." << std::endl;

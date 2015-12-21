@@ -24,9 +24,6 @@
     <ClInclude Include="Mesh--.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="HalfEdgeMesh--.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="STLMesh--.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -36,9 +33,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="HalfEdgeMesh--.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="STLMesh--.cpp">

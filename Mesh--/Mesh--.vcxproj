@@ -146,13 +146,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="HalfEdgeMesh--.h" />
     <ClInclude Include="Mesh--.h" />
     <ClInclude Include="MinHeap.hpp" />
     <ClInclude Include="STLMesh--.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="HalfEdgeMesh--.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="STLMesh--.cpp" />
   </ItemGroup>
