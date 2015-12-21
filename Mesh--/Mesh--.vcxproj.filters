@@ -21,13 +21,19 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Vector.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Edge.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="Mesh--.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="STLMesh--.h">
+    <ClInclude Include="CrossLink.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="MinHeap.hpp">
+    <ClInclude Include="Matrix.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -35,7 +41,13 @@
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="STLMesh--.cpp">
+    <ClCompile Include="Vector.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Mesh--.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Matrix.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

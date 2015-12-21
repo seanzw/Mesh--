@@ -1,8 +1,9 @@
-#include "STLMesh--.h"
+#include "Mesh--.h"
+#include "Matrix.h"
 
 namespace mmm {
 
-    STLMesh::STLMesh(std::istream &in, double threshold) : threshold(threshold) {
+    Mesh::Mesh(std::istream &in, double threshold) : threshold(threshold) {
         char c;
         while (in.get(c)) {
             if (c == '#') {
@@ -61,13 +62,13 @@ namespace mmm {
         old_num_verts = vert.size();
     }
 
-    STLMesh::~STLMesh() {
+    Mesh::~Mesh() {
         vert.clear();
         removed.clear();
         face.clear();
     }
 
-    void STLMesh::dumpObj(std::ostream &out) const {
+    void Mesh::dumpObj(std::ostream &out) const {
         size_t vertexN = vert.size();
         std::vector<int> vertexID(vertexN, 0);
         int vertexReal = 0;
@@ -91,10 +92,10 @@ namespace mmm {
     }
 
     /* Get the split position of the edge. */
-    std::pair<STLMesh::Vector, double> STLMesh::getPosition(const Edge &e) {
+    std::pair<Vector, double> Mesh::getPosition(const Edge &e) {
 
         /* Get the Q matrix for all the faces. */
-        Matrix q(4, Vector(4, 0));
+        Matrix q(0.0);
         for (const auto &f : face[e.v1]) {
             auto n = crossProduct(vert[f.v1] - vert[e.v1], vert[f.v2] - vert[e.v1]);
             n = n / norm(n);
@@ -108,18 +109,7 @@ namespace mmm {
             outerProductAcc(n, n, q);
         }
 
-        Vector v;
-        //try {
-        //    v = solveEquation(q, 3);
-        //}
-        //catch (...) {
-        v = (vert[e.v1] + vert[e.v2]) / 2;
-        //}
-
-        // Check the quality of the split position.
-        if (norm(v - vert[e.v1]) + norm(v - vert[e.v2]) > TOLERATE * norm(vert[e.v1] - vert[e.v2])) {
-            v = (vert[e.v1] + vert[e.v2]) / 2;
-        }
+        Vector v = (vert[e.v1] + vert[e.v2]) / 2;
 
         // Change this to vec4 and calculate the cost.
         v.push_back(1);
@@ -131,7 +121,7 @@ namespace mmm {
 
 
     /* Select an edge to collapse. */
-    std::pair<STLMesh::Edge, STLMesh::Vector> STLMesh::selectEdge(double threshold) {
+    std::pair<Edge, Vector> Mesh::selectEdge(double threshold) {
         Edge idx(-1, -1);
         Vector pos;
         std::pair<double, Edge> tmp;
@@ -177,14 +167,14 @@ namespace mmm {
      * @return bool: true if the face's normal changed, false otherwise.
      *
      */
-    bool STLMesh::faceReverse(const Edge &e, const Vector &v1, const Vector &v2) {
+    bool Mesh::faceReverse(const Edge &e, const Vector &v1, const Vector &v2) {
         const auto &x = vert[e.v1];
         const auto &y = vert[e.v2];
         return innerProduct(crossProduct(x - v1, y - v1), crossProduct(x - v2, y - v2)) < 0.0;
     }
 
     /* Add an edge to the heap. */
-    void STLMesh::addToHeap(const Edge &e, double threshold) {
+    void Mesh::addToHeap(const Edge &e, double threshold) {
         if (edgeLen(e) > threshold) return;
 
         // Get the split position.
@@ -194,7 +184,7 @@ namespace mmm {
     }
 
     /* Update the neighbor edge and add them to the heap. */
-    void STLMesh::updateNeighborEdge(int v, double threshold) {
+    void Mesh::updateNeighborEdge(int v, double threshold) {
         std::set<int> neighbor;
         for (const auto &f : face[v]) {
             neighbor.insert(f.v1);
@@ -212,7 +202,7 @@ namespace mmm {
      * @param threshold: maximum length for a removable edge.
      * @return void.
      */
-    void STLMesh::removeEdge(const Edge &e, const Vector &v, double threshold) {
+    void Mesh::removeEdge(const Edge &e, const Vector &v, double threshold) {
 
         // First check if any face of v1 will be reversed after this removal.
         std::vector<Edge> toRev;
@@ -310,7 +300,7 @@ namespace mmm {
     }
 
     /* Push all the valid edges into the heap. */
-    void STLMesh::buildHeap(double threshold) {
+    void Mesh::buildHeap(double threshold) {
 
         // First clear the heap.
         while (!heap.empty()) heap.pop();
@@ -324,7 +314,7 @@ namespace mmm {
         }
     }
 
-    void STLMesh::simplify(size_t target) {
+    void Mesh::simplify(size_t target) {
 
         // Build the heap.
         buildHeap(threshold);

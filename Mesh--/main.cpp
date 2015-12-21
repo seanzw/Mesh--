@@ -4,7 +4,7 @@
 #include <fstream>
 #include <chrono>
 
-#include "STLMesh--.h"
+#include "Mesh--.h"
 
 int main(int argc, char *argv[]) {
     if (argc < 4) {
@@ -23,24 +23,22 @@ int main(int argc, char *argv[]) {
     }
     std::cout << "Start parsing mesh..." << std::endl;
 
-    mmm::Mesh *mesh = nullptr;
-    std::cout << "Using STL mesh..." << std::endl;
-    mesh = new mmm::STLMesh(in, 0.1);
+    mmm::Mesh mesh(in, 0.1);
 
     in.close();
     std::cout << "Finished." << std::endl;
 
     // Simplify the mesh.
     std::cout << "Start simplifying mesh..." << std::endl;
-    size_t origin = mesh->getOldNumVerts();
+    size_t origin = mesh.getOldNumVerts();
     size_t remain = (size_t)(origin * ratio);
 
     clock_t start = clock();
-    mesh->simplify(remain);
+    mesh.simplify(remain);
     double duration = (clock() - start) / CLOCKS_PER_SEC;
 
     std::cout << "Finished: Simplified / Original = " << std::setw(6) <<
-        (double)mesh->getNumFaces()  / (double)mesh->getOldNumFaces() << std::endl;
+        (double)mesh.getNumFaces()  / (double)mesh.getOldNumFaces() << std::endl;
     std::cout << "Total time: " << std::setw(6) << duration << " sec." << std::endl;
 
     // Dump the output mesh.
@@ -50,7 +48,7 @@ int main(int argc, char *argv[]) {
         return -1;
     }
 
-    mesh->dumpObj(out);
+    mesh.dumpObj(out);
     std::cout << "Saved to > " << outputFN << std::endl;
     out.close();
 

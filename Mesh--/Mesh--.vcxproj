@@ -146,13 +146,17 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="CrossLink.h" />
+    <ClInclude Include="Edge.h" />
+    <ClInclude Include="Matrix.h" />
     <ClInclude Include="Mesh--.h" />
-    <ClInclude Include="MinHeap.hpp" />
-    <ClInclude Include="STLMesh--.h" />
+    <ClInclude Include="Vector.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="STLMesh--.cpp" />
+    <ClCompile Include="Matrix.cpp" />
+    <ClCompile Include="Mesh--.cpp" />
+    <ClCompile Include="Vector.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Object Include="..\Objs\arma.obj">
