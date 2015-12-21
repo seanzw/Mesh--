@@ -65,6 +65,6 @@ To preserve the orientation, I added a function to check that whether a face wou
 
 ###Result.
 Here are some results from this program. I simplified them first with Mesh-- and then rendered them with my ray tracer engine [yart-cpp](https://github.com/seanzw/yart-cpp).
-
-
-
+<img src="img/dragon.png"/>
+<img src="img/bunny.png"/>
+<img src="img/heptoroid.png"/>
