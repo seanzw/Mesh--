@@ -27,7 +27,7 @@ namespace mmm {
 
     public:
 
-        Mesh(std::istream &in, double threshold);
+        Mesh(std::istream &in);
         virtual ~Mesh();
 
         /* Output Obj file. */
@@ -36,7 +36,7 @@ namespace mmm {
         /**
         * Simplify the mesh with edge collapse.
         */
-        virtual void simplify(size_t remain_verts);
+        virtual void simplify(size_t remain_verts, double threshold);
 
         virtual inline size_t getNumFaces() const { return num_faces; }
         virtual inline size_t getNumEdges() const { return edge->size(); }
@@ -62,8 +62,6 @@ namespace mmm {
         size_t old_num_faces;
         size_t old_num_verts;
         size_t old_num_edges;
-
-        const double threshold;
 
         double edgeLen(const Edge &e) {
             return norm(vert[e.v1] - vert[e.v2]);

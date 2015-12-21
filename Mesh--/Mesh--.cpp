@@ -3,7 +3,7 @@
 
 namespace mmm {
 
-    Mesh::Mesh(std::istream &in, double threshold) : threshold(threshold) {
+    Mesh::Mesh(std::istream &in) {
         char c;
         while (in.get(c)) {
             if (c == '#') {
@@ -231,45 +231,35 @@ namespace mmm {
             face[e.v1].emplace(f.v2, f.v1);
         }
 
-        /* Process the faces of v2. */
+        /* Process the faces of v2. 
+         *          v2
+         *         /  \
+         *        /    \
+         *      f.v1 - f.v2
+         */
         for (const auto &f : face[e.v2]) {
-            assert(face[f.v2].find(Edge(e.v2, f.v1)) != face[f.v2].end());
-            face[f.v2].erase(Edge(e.v2, f.v1));
-
+            
             /* Check if the face will be reverse. */
             auto reverse = faceReverse(f, vert[e.v2], v);
-            if (f.v1 != e.v1 && f.v2 != e.v1) {
-                // This isn't the face we will collapse.
-                // Bind it to v1.
-                if (reverse) {
-                    face[f.v2].emplace(f.v1, e.v1);
-                }
-                else {
-                    face[f.v2].emplace(e.v1, f.v1);
-                }
-            }
-
+            assert(face[f.v2].find(Edge(e.v2, f.v1)) != face[f.v2].end());
             assert(face[f.v1].find(Edge(f.v2, e.v2)) != face[f.v1].end());
+            face[f.v2].erase(Edge(e.v2, f.v1));
             face[f.v1].erase(Edge(f.v2, e.v2));
             if (f.v1 != e.v1 && f.v2 != e.v1) {
+                // This isn't the face we will collapse.
                 if (reverse) {
+                    face[f.v2].emplace(f.v1, e.v1);
                     face[f.v1].emplace(e.v1, f.v2);
-                }
-                else {
-                    face[f.v1].emplace(f.v2, e.v1);
-                }
-            }
-
-            // This is the face we will remove.
-            if (f.v1 == e.v1 || f.v2 == e.v1)
-                num_faces--;
-            else {
-                if (reverse) {
                     face[e.v1].emplace(f.v2, f.v1);
                 }
                 else {
+                    face[f.v2].emplace(e.v1, f.v1);
+                    face[f.v1].emplace(f.v2, e.v1);
                     face[e.v1].insert(f);
                 }
+            }
+            else {
+                num_faces--;
             }
 
             // Update the edge.
@@ -314,7 +304,7 @@ namespace mmm {
         }
     }
 
-    void Mesh::simplify(size_t target) {
+    void Mesh::simplify(size_t target, double threshold) {
 
         // Build the heap.
         buildHeap(threshold);
@@ -325,9 +315,10 @@ namespace mmm {
                 removeEdge(e.first, e.second, threshold);
             else {
                 // Failed getting an edge to deleted.
-                std::cout << "ERROR: No enough edges under threshold." << std::endl;
-                std::cout << "Warning: Current result will be saved." << std::endl;
-                return;
+                // Double the threshold.
+                threshold *= 2.0;
+                std::cout << "Not enough edges, double the threshold.\n";
+                buildHeap(threshold);
             }
         }
     }

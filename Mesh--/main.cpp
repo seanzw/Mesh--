@@ -23,7 +23,7 @@ int main(int argc, char *argv[]) {
     }
     std::cout << "Start parsing mesh..." << std::endl;
 
-    mmm::Mesh mesh(in, 0.1);
+    mmm::Mesh mesh(in);
 
     in.close();
     std::cout << "Finished." << std::endl;
@@ -34,7 +34,7 @@ int main(int argc, char *argv[]) {
     size_t remain = (size_t)(origin * ratio);
 
     clock_t start = clock();
-    mesh.simplify(remain);
+    mesh.simplify(remain, 0.1);
     double duration = (clock() - start) / CLOCKS_PER_SEC;
 
     std::cout << "Finished: Simplified / Original = " << std::setw(6) <<
