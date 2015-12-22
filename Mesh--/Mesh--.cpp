@@ -26,30 +26,25 @@ namespace mmm {
                 int id[3];
                 in >> id[0] >> id[1] >> id[2];
 
-                if (face.size() != verts.size()) {
-                    face.resize(verts.size());
-                    removed.resize(verts.size(), false);
-                    edge = new CrossLink((int)verts.size());
+                if (vfTable.size() != verts.size()) {
+                    faces.reserve(verts.size());
+                    vfTable.resize(verts.size());
+                    vRemoved.resize(verts.size(), false);
+                    edges = new CrossLink((int)verts.size());
                 }
-
-                num_faces++;
 
                 id[0]--; id[1]--; id[2]--;
 
-                /**
-                 * Store the opposite edge in the to represent the face.
-                 * v, face[v].first, face[v].v2 is counter-clockwise.
-                 */
-
-                face[id[0]].emplace(id[1], id[2]);
-                face[id[1]].emplace(id[2], id[0]);
-                face[id[2]].emplace(id[0], id[1]);
+                faces.emplace_back(id[0], id[1], id[2]);
+                vfTable[id[0]].insert((int)faces.size() - 1);
+                vfTable[id[1]].insert((int)faces.size() - 1);
+                vfTable[id[2]].insert((int)faces.size() - 1);
 
                 std::sort(id, id + 3);
                 assert(0 <= id[0] && id[0] < id[1] && id[1] < id[2] && id[2] < verts.size());
-                edge->insert(id[0], id[1]);
-                edge->insert(id[1], id[2]);
-                edge->insert(id[0], id[2]);
+                edges->insert(id[0], id[1]);
+                edges->insert(id[1], id[2]);
+                edges->insert(id[0], id[2]);
 
             }
             else {
@@ -57,15 +52,16 @@ namespace mmm {
                 continue;
             }
         }
-        old_num_edges = edge->size();
-        old_num_faces = face.size();
+        num_faces = faces.size();
+        old_num_edges = edges->size();
+        old_num_faces = faces.size();
         old_num_verts = verts.size();
     }
 
     Mesh::~Mesh() {
         verts.clear();
-        removed.clear();
-        face.clear();
+        vRemoved.clear();
+        faces.clear();
     }
 
     void Mesh::dumpObj(std::ostream &out) const {
@@ -74,18 +70,21 @@ namespace mmm {
         int vertexReal = 0;
 
         for (int i = 0; i < vertexN; i++) {
-            if (removed[i]) continue;
+            if (vRemoved[i]) continue;
             vertexID[i] = ++vertexReal;
             out << "v " << verts[i][0] << " " << verts[i][1] << " " << verts[i][2] << std::endl;
         }
 
         for (int i = 0; i < vertexN; i++) {
-            if (removed[i]) continue;
-            for (const auto &f : face[i]) {
-                assert(!removed[f.v1] && !removed[f.v2]);
-                assert(vertexID[f.v1] && vertexID[f.v2] && vertexID[i]);
-                if (i < f.v1 && i < f.v2) {
-                    out << "f " << vertexID[i] << ' ' << vertexID[f.v1] << ' ' << vertexID[f.v2] << std::endl;
+            if (vRemoved[i]) continue;
+            for (const auto &fId : vfTable[i]) {
+                Edge edge = faces[fId].against(i);
+                int v1 = edge.v1;
+                int v2 = edge.v2;
+                assert(!vRemoved[v1] && !vRemoved[v2]);
+                assert(vertexID[v1] && vertexID[v2] && vertexID[i]);
+                if (i < v1 && i < v2) {
+                    out << "f " << vertexID[i] << ' ' << vertexID[v1] << ' ' << vertexID[v2] << std::endl;
                 }
             }
         }
@@ -96,18 +95,20 @@ namespace mmm {
 
         /* Get the Q matrix for all the faces. */
         Matrix q(0.0);
-        for (const auto &f : face[e.v1]) {
-            auto n = crossProduct(verts[f.v1] - verts[e.v1], verts[f.v2] - verts[e.v1]);
-            n = n / norm(n);
-            n.push_back(-innerProduct(verts[e.v1], n));
-            outerProductAcc(n, n, q);
-        }
-        for (const auto &f : face[e.v2]) {
-            auto n = crossProduct(verts[f.v1] - verts[e.v2], verts[f.v2] - verts[e.v2]);
-            n = n / norm(n);
-            n.push_back(-innerProduct(verts[e.v2], n));
-            outerProductAcc(n, n, q);
-        }
+
+        auto calculate = [&](int vId) -> void {
+            for (const auto &fId : vfTable[vId]) {
+                Edge edge = faces[fId].against(vId);
+                int v1 = edge.v1, v2 = edge.v2;
+                auto n = crossProduct(verts[v1] - verts[vId], verts[v2] - verts[vId]);
+                n = n / norm(n);
+                n.push_back(-innerProduct(verts[vId], n));
+                outerProductAcc(n, n, q);
+            }
+        };
+
+        calculate(e.v1);
+        calculate(e.v2);
 
         Vector v = (verts[e.v1] + verts[e.v2]) / 2;
 
@@ -130,10 +131,10 @@ namespace mmm {
             heap.pop();
 
             // This edge is already deleted.
-            if (!edge->find(tmp.second.v1, tmp.second.v2)) continue;
+            if (!edges->find(tmp.second.v1, tmp.second.v2)) continue;
 
             // The verts of the edge has been deleted.
-            if (removed[tmp.second.v1] || removed[tmp.second.v2]) continue;
+            if (vRemoved[tmp.second.v1] || vRemoved[tmp.second.v2]) continue;
 
             // The edge is too long.
             if (edgeLen(tmp.second) > threshold) continue;
@@ -186,9 +187,10 @@ namespace mmm {
     /* Update the neighbor edge and add them to the heap. */
     void Mesh::updateNeighborEdge(int v, double threshold) {
         std::set<int> neighbor;
-        for (const auto &f : face[v]) {
-            neighbor.insert(f.v1);
-            neighbor.insert(f.v2);
+        for (const auto &fId : vfTable[v]) {
+            Edge edge = faces[fId].against(v);
+            neighbor.insert(edge.v1);
+            neighbor.insert(edge.v2);
         }
         for (auto x : neighbor) {
             addToHeap(Edge(min(x, v), max(x, v)), threshold);
@@ -205,84 +207,72 @@ namespace mmm {
     void Mesh::removeEdge(const Edge &e, const Vector &v, double threshold) {
 
         // First check if any face of v1 will be reversed after this removal.
-        std::vector<Edge> toRev;
-        for (const auto &f : face[e.v1]) {
+        for (const auto &fId : vfTable[e.v1]) {
+            Edge edge = faces[fId].against(e.v1);
 
             // If this is the face we will remove, simply ignore it.
-            if (f.v1 == e.v2 || f.v2 == e.v2) continue;
+            if (edge.v1 == e.v2 || edge.v2 == e.v2) continue;
 
-            bool reverse = faceReverse(f, verts[e.v1], v);
+            bool reverse = faceReverse(edge, verts[e.v1], v);
             if (!reverse) continue;
 
             // The face will be reversed after we replacing v1 with v.
             // Fix the orientation of the faces at face[f.v2] and face[f.v1].
-            toRev.push_back(f);
-            assert(face[f.v2].find(Edge(e.v1, f.v1)) != face[f.v2].end());
-            face[f.v2].erase(Edge(e.v1, f.v1));
-            face[f.v2].emplace(f.v1, e.v1);
-
-            assert(face[f.v1].find(Edge(f.v2, e.v1)) != face[f.v1].end());
-            face[f.v1].erase(Edge(f.v2, e.v1));
-            face[f.v1].emplace(e.v1, f.v2);
-        }
-
-        for (const auto &f : toRev) {
-            face[e.v1].erase(f);
-            face[e.v1].emplace(f.v2, f.v1);
+            assert(vfTable[edge.v2].find(fId) != vfTable[edge.v2].end());
+            assert(vfTable[edge.v1].find(fId) != vfTable[edge.v1].end());
+            faces[fId].reverse();
         }
 
         /* Process the faces of v2. 
          *          v2
          *         /  \
          *        /    \
-         *      f.v1 - f.v2
+         *  edge.v1 - edge.v2
          */
-        for (const auto &f : face[e.v2]) {
+        for (const auto &fId : vfTable[e.v2]) {
             
             /* Check if the face will be reverse. */
-            auto reverse = faceReverse(f, verts[e.v2], v);
-            assert(face[f.v2].find(Edge(e.v2, f.v1)) != face[f.v2].end());
-            assert(face[f.v1].find(Edge(f.v2, e.v2)) != face[f.v1].end());
-            face[f.v2].erase(Edge(e.v2, f.v1));
-            face[f.v1].erase(Edge(f.v2, e.v2));
-            if (f.v1 != e.v1 && f.v2 != e.v1) {
+            Edge edge = faces[fId].against(e.v2);
+
+            auto reverse = faceReverse(edge, verts[e.v2], v);
+            assert(vfTable[edge.v2].find(fId) != vfTable[edge.v2].end());
+            assert(vfTable[edge.v1].find(fId) != vfTable[edge.v1].end());
+            if (edge.v1 != e.v1 && edge.v2 != e.v1) {
                 // This isn't the face we will collapse.
+                faces[fId].replace(e.v2, e.v1);
+                vfTable[e.v1].insert(fId);
                 if (reverse) {
-                    face[f.v2].emplace(f.v1, e.v1);
-                    face[f.v1].emplace(e.v1, f.v2);
-                    face[e.v1].emplace(f.v2, f.v1);
-                }
-                else {
-                    face[f.v2].emplace(e.v1, f.v1);
-                    face[f.v1].emplace(f.v2, e.v1);
-                    face[e.v1].insert(f);
+                    faces[fId].reverse();
                 }
             }
             else {
+                vfTable[edge.v1].erase(fId);
+                vfTable[edge.v2].erase(fId);
                 num_faces--;
             }
 
             // Update the edge.
-            if (edge->find(min(e.v2, f.v1), max(e.v2, f.v1)))
-                edge->erase(min(e.v2, f.v1), max(e.v2, f.v1));
-            if (edge->find(min(e.v2, f.v2), max(e.v2, f.v2)))
-                edge->erase(min(e.v2, f.v2), max(e.v2, f.v2));
-            if (f.v1 != e.v1 && f.v2 != e.v1) {
-                edge->insert(min(e.v1, f.v1), max(e.v1, f.v1));
-                edge->insert(min(e.v1, f.v2), max(e.v1, f.v2));
+            if (edges->find(min(e.v2, edge.v1), max(e.v2, edge.v1)))
+                edges->erase(min(e.v2, edge.v1), max(e.v2, edge.v1));
+            if (edges->find(min(e.v2, edge.v2), max(e.v2, edge.v2)))
+                edges->erase(min(e.v2, edge.v2), max(e.v2, edge.v2));
+            if (edge.v1 != e.v1 && edge.v2 != e.v1) {
+                edges->insert(min(e.v1, edge.v1), max(e.v1, edge.v1));
+                edges->insert(min(e.v1, edge.v2), max(e.v1, edge.v2));
             }
         }
 
-        edge->erase(e.v1, e.v2);
+        edges->erase(e.v1, e.v2);
         verts[e.v1] = v;
         verts[e.v2].clear();
-        removed[e.v2] = true;
-        face[e.v2].clear();
+        vRemoved[e.v2] = true;
+        vfTable[e.v2].clear();
 
         std::set<int> neighbor;     /* All the neighboring vert. */
-        for (const auto &f : face[e.v1]) {
-            neighbor.insert(f.v1);
-            neighbor.insert(f.v2);
+        for (const auto &fId : vfTable[e.v1]) {
+            Edge edge = faces[fId].against(e.v1);
+            neighbor.insert(edge.v1);
+            neighbor.insert(edge.v2);
         }
         for (auto nb : neighbor) {
             updateNeighborEdge(nb, threshold);
@@ -295,8 +285,8 @@ namespace mmm {
         // First clear the heap.
         while (!heap.empty()) heap.pop();
 
-        for (int i = 0; i < edge->size(); ++i) {
-            CrossLink::Node *node = edge->edgeX[i];
+        for (int i = 0; i < edges->size(); ++i) {
+            CrossLink::Node *node = edges->edgeX[i];
             while (node != nullptr) {
                 addToHeap(Edge(node->x, node->y), threshold);
                 node = node->dwn;

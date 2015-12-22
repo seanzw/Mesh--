@@ -30,7 +30,7 @@ int main(int argc, char *argv[]) {
 
     // Simplify the mesh.
     std::cout << "Start simplifying mesh..." << std::endl;
-    size_t origin = mesh.getOldNumVerts();
+    size_t origin = mesh.getOldNumFaces();
     size_t remain = (size_t)(origin * ratio);
 
     clock_t start = clock();

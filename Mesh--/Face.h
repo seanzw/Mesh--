@@ -12,7 +12,12 @@ namespace mmm {
         // Get the other two vertexes against v.
         Edge against(int v) const;
 
-    private:
+        // Reverse the orientation of the face.
+        void reverse();
+
+        // Replace v with vNew;
+        void replace(int v, int vNew);
+
         int v1, v2, v3;
     };
 }

@@ -11,6 +11,7 @@
 
 #include "Vector.h"
 #include "Edge.h"
+#include "Face.h"
 #include "CrossLink.h"
 
 #define BUFFER_SIZE 1024
@@ -39,8 +40,6 @@ namespace mmm {
         virtual void simplify(size_t remain_verts, double threshold);
 
         virtual inline size_t getNumFaces() const { return num_faces; }
-        virtual inline size_t getNumEdges() const { return edge->size(); }
-        virtual inline size_t getNumVerts() const { return verts.size(); }
 
         virtual inline size_t getOldNumFaces() const { return old_num_faces; }
         virtual inline size_t getOldNumEdges() const { return old_num_edges; }
@@ -51,9 +50,14 @@ namespace mmm {
         /**************************************************************/
 
         std::vector<Vector> verts;          /* Vector for position. */
-        std::vector<bool> removed;          /* Is this vert removed?. */
-        std::vector< std::set<Edge> > face; /* Vert to edge table. */
-        CrossLink *edge;
+        std::vector<bool> vRemoved;         /* Is this vert removed?. */
+
+        std::vector<Face> faces;
+        std::vector< std::set<int> > vfTable;
+
+        //std::vector< std::set<Edge> > faces; /* Vert to edge table. */
+
+        CrossLink *edges;
 
         /* Heap is a priority queue for Edge. */
         std::priority_queue< std::pair<double, Edge> > heap;
