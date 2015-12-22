@@ -148,11 +148,13 @@
   <ItemGroup>
     <ClInclude Include="CrossLink.h" />
     <ClInclude Include="Edge.h" />
+    <ClInclude Include="Face.h" />
     <ClInclude Include="Matrix.h" />
     <ClInclude Include="Mesh--.h" />
     <ClInclude Include="Vector.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Face.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Matrix.cpp" />
     <ClCompile Include="Mesh--.cpp" />

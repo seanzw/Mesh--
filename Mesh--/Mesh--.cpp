@@ -20,16 +20,16 @@ namespace mmm {
                 double z;
                 in >> x >> y >> z;
 
-                vert.emplace_back(x, y, z);
+                verts.emplace_back(x, y, z);
             }
             else if (c == 'f') {
                 int id[3];
                 in >> id[0] >> id[1] >> id[2];
 
-                if (face.size() != vert.size()) {
-                    face.resize(vert.size());
-                    removed.resize(vert.size(), false);
-                    edge = new CrossLink((int)vert.size());
+                if (face.size() != verts.size()) {
+                    face.resize(verts.size());
+                    removed.resize(verts.size(), false);
+                    edge = new CrossLink((int)verts.size());
                 }
 
                 num_faces++;
@@ -46,7 +46,7 @@ namespace mmm {
                 face[id[2]].emplace(id[0], id[1]);
 
                 std::sort(id, id + 3);
-                assert(0 <= id[0] && id[0] < id[1] && id[1] < id[2] && id[2] < vert.size());
+                assert(0 <= id[0] && id[0] < id[1] && id[1] < id[2] && id[2] < verts.size());
                 edge->insert(id[0], id[1]);
                 edge->insert(id[1], id[2]);
                 edge->insert(id[0], id[2]);
@@ -59,24 +59,24 @@ namespace mmm {
         }
         old_num_edges = edge->size();
         old_num_faces = face.size();
-        old_num_verts = vert.size();
+        old_num_verts = verts.size();
     }
 
     Mesh::~Mesh() {
-        vert.clear();
+        verts.clear();
         removed.clear();
         face.clear();
     }
 
     void Mesh::dumpObj(std::ostream &out) const {
-        size_t vertexN = vert.size();
+        size_t vertexN = verts.size();
         std::vector<int> vertexID(vertexN, 0);
         int vertexReal = 0;
 
         for (int i = 0; i < vertexN; i++) {
             if (removed[i]) continue;
             vertexID[i] = ++vertexReal;
-            out << "v " << vert[i][0] << " " << vert[i][1] << " " << vert[i][2] << std::endl;
+            out << "v " << verts[i][0] << " " << verts[i][1] << " " << verts[i][2] << std::endl;
         }
 
         for (int i = 0; i < vertexN; i++) {
@@ -97,19 +97,19 @@ namespace mmm {
         /* Get the Q matrix for all the faces. */
         Matrix q(0.0);
         for (const auto &f : face[e.v1]) {
-            auto n = crossProduct(vert[f.v1] - vert[e.v1], vert[f.v2] - vert[e.v1]);
+            auto n = crossProduct(verts[f.v1] - verts[e.v1], verts[f.v2] - verts[e.v1]);
             n = n / norm(n);
-            n.push_back(-innerProduct(vert[e.v1], n));
+            n.push_back(-innerProduct(verts[e.v1], n));
             outerProductAcc(n, n, q);
         }
         for (const auto &f : face[e.v2]) {
-            auto n = crossProduct(vert[f.v1] - vert[e.v2], vert[f.v2] - vert[e.v2]);
+            auto n = crossProduct(verts[f.v1] - verts[e.v2], verts[f.v2] - verts[e.v2]);
             n = n / norm(n);
-            n.push_back(-innerProduct(vert[e.v2], n));
+            n.push_back(-innerProduct(verts[e.v2], n));
             outerProductAcc(n, n, q);
         }
 
-        Vector v = (vert[e.v1] + vert[e.v2]) / 2;
+        Vector v = (verts[e.v1] + verts[e.v2]) / 2;
 
         // Change this to vec4 and calculate the cost.
         v.push_back(1);
@@ -168,8 +168,8 @@ namespace mmm {
      *
      */
     bool Mesh::faceReverse(const Edge &e, const Vector &v1, const Vector &v2) {
-        const auto &x = vert[e.v1];
-        const auto &y = vert[e.v2];
+        const auto &x = verts[e.v1];
+        const auto &y = verts[e.v2];
         return innerProduct(crossProduct(x - v1, y - v1), crossProduct(x - v2, y - v2)) < 0.0;
     }
 
@@ -211,7 +211,7 @@ namespace mmm {
             // If this is the face we will remove, simply ignore it.
             if (f.v1 == e.v2 || f.v2 == e.v2) continue;
 
-            bool reverse = faceReverse(f, vert[e.v1], v);
+            bool reverse = faceReverse(f, verts[e.v1], v);
             if (!reverse) continue;
 
             // The face will be reversed after we replacing v1 with v.
@@ -240,7 +240,7 @@ namespace mmm {
         for (const auto &f : face[e.v2]) {
             
             /* Check if the face will be reverse. */
-            auto reverse = faceReverse(f, vert[e.v2], v);
+            auto reverse = faceReverse(f, verts[e.v2], v);
             assert(face[f.v2].find(Edge(e.v2, f.v1)) != face[f.v2].end());
             assert(face[f.v1].find(Edge(f.v2, e.v2)) != face[f.v1].end());
             face[f.v2].erase(Edge(e.v2, f.v1));
@@ -274,8 +274,8 @@ namespace mmm {
         }
 
         edge->erase(e.v1, e.v2);
-        vert[e.v1] = v;
-        vert[e.v2].clear();
+        verts[e.v1] = v;
+        verts[e.v2].clear();
         removed[e.v2] = true;
         face[e.v2].clear();
 

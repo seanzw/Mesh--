@@ -40,7 +40,7 @@ namespace mmm {
 
         virtual inline size_t getNumFaces() const { return num_faces; }
         virtual inline size_t getNumEdges() const { return edge->size(); }
-        virtual inline size_t getNumVerts() const { return vert.size(); }
+        virtual inline size_t getNumVerts() const { return verts.size(); }
 
         virtual inline size_t getOldNumFaces() const { return old_num_faces; }
         virtual inline size_t getOldNumEdges() const { return old_num_edges; }
@@ -50,7 +50,7 @@ namespace mmm {
         
         /**************************************************************/
 
-        std::vector<Vector> vert;           /* Vector for position. */
+        std::vector<Vector> verts;          /* Vector for position. */
         std::vector<bool> removed;          /* Is this vert removed?. */
         std::vector< std::set<Edge> > face; /* Vert to edge table. */
         CrossLink *edge;
@@ -64,7 +64,7 @@ namespace mmm {
         size_t old_num_edges;
 
         double edgeLen(const Edge &e) {
-            return norm(vert[e.v1] - vert[e.v2]);
+            return norm(verts[e.v1] - verts[e.v2]);
         }
 
         /* Get the split position of the edge. */
